@@ -1,93 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Forest Connectivity Map</title>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <meta charset="UTF-8" />
+  <title>Klang Valley Forest Patches</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
   <style>
-    #map { height: 100vh; }
-    .info.legend {
-      background: white;
-      padding: 6px 8px;
-      font: 14px Arial, sans-serif;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      border-radius: 5px;
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
     }
-    .info.legend i {
-      width: 18px;
-      height: 18px;
-      float: left;
-      margin-right: 8px;
-      opacity: 0.7;
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+    .legend {
+      background: white;
+      padding: 10px;
+      line-height: 1.5em;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.ajax/dist/leaflet.ajax.min.js"></script>
+
   <script>
-    const map = L.map('map').setView([3.139, 101.6869], 11); // Change this to your study area's coords
+    const map = L.map('map').setView([3.1, 101.7], 11); // Adjust center/zoom if needed
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    function getColor(tier) {
-      return tier === 'Core Fragment' ? '#1a9850' :
-             tier === 'Edge Fragment' ? '#91cf60' :
-             tier === 'Riparian Fragment' ? '#fee08b' :
-             tier === 'Linear Green Pockets' ? '#fc8d59' :
-             tier === 'Recreational Forests and Parks' ? '#d73027' :
-             tier === 'Degraded Fragments' ? '#a6d96a' :
-             '#cccccc';
-    }
+    // Define colours for different tiers
+    const tierColors = {
+      'Core': '#006400',
+      'Edge': '#228B22',
+      'Riparian': '#1E90FF',
+      'Linear': '#FFA500',
+      'Isolated': '#8B0000',
+      'Recreational': '#6A5ACD',
+      'Degraded': '#808080',
+      'Monoculture': '#A0522D'
+    };
 
-    function style(feature) {
-      return {
-        fillColor: getColor(feature.properties.tier),
-        weight: 1,
-        opacity: 1,
-        color: 'white',
-        fillOpacity: 0.7
-      };
-    }
-
-    function onEachFeature(feature, layer) {
-      let props = feature.properties;
-      layer.bindPopup(
-        `<strong>Patch ID:</strong> ${props.patch_id}<br>
-         <strong>Tier:</strong> ${props.tier}<br>
-         <strong>Area:</strong> ${props.area} ha<br>
-         <strong>Core Area:</strong> ${props.core_area} ha<br>
-         <strong>Contiguity Index:</strong> ${props.contiguity_index}<br>
-         <strong>Perimeter-Area Ratio:</strong> ${props.perimeter_area_ratio}`
-      );
-    }
-
-    fetch("forest_patches.geojson")
-      .then(response => response.json())
+    // Load GeoJSON
+    fetch('forest_patches.geojson')
+      .then(res => res.json())
       .then(data => {
         L.geoJSON(data, {
-          style: style,
-          onEachFeature: onEachFeature
+          style: feature => ({
+            color: tierColors[feature.properties.tier] || '#555',
+            weight: 1,
+            fillOpacity: 0.6
+          }),
+          onEachFeature: (feature, layer) => {
+            const props = feature.properties;
+            let popup = `<strong>Patch ID:</strong> ${props.patch_id || ''}<br>`;
+            popup += `<strong>Tier:</strong> ${props.tier || ''}<br>`;
+            popup += `<strong>Area (ha):</strong> ${props.area_ha || ''}<br>`;
+            popup += `<strong>Contiguity:</strong> ${props.contiguity || ''}<br>`;
+            popup += `<strong>Core Area:</strong> ${props.core_area || ''}<br>`;
+            popup += `<strong>Perimeter-Area Ratio:</strong> ${props.perimeter_area_ratio || ''}`;
+            layer.bindPopup(popup);
+          }
         }).addTo(map);
       });
-
-    const legend = L.control({position: 'bottomright'});
-    legend.onAdd = function (map) {
-      const div = L.DomUtil.create('div', 'info legend');
-      const tiers = ['Core Fragment', 'Edge Fragment', 'Riparian Fragment', 'Linear Green Pockets', 'Recreational Forests and Parks', 'Degraded Fragments'];
-      const colors = ['#1a9850', '#91cf60', '#fee08b', '#fc8d59', '#d73027', '#a6d96a'];
-      for (let i = 0; i < tiers.length; i++) {
-        div.innerHTML += `<i style="background:${colors[i]}"></i> ${tiers[i]}<br>`;
-      }
-      return div;
-    };
-    legend.addTo(map);
   </script>
 </body>
 </html>
