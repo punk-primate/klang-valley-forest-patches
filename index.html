@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Forest Connectivity Map</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 100vh; }
+    .info.legend {
+      background: white;
+      padding: 6px 8px;
+      font: 14px Arial, sans-serif;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      border-radius: 5px;
+    }
+    .info.legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([3.139, 101.6869], 11); // Change this to your study area's coords
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    function getColor(tier) {
+      return tier === 'Core Fragment' ? '#1a9850' :
+             tier === 'Edge Fragment' ? '#91cf60' :
+             tier === 'Riparian Fragment' ? '#fee08b' :
+             tier === 'Linear Green Pockets' ? '#fc8d59' :
+             tier === 'Recreational Forests and Parks' ? '#d73027' :
+             tier === 'Degraded Fragments' ? '#a6d96a' :
+             '#cccccc';
+    }
+
+    function style(feature) {
+      return {
+        fillColor: getColor(feature.properties.tier),
+        weight: 1,
+        opacity: 1,
+        color: 'white',
+        fillOpacity: 0.7
+      };
+    }
+
+    function onEachFeature(feature, layer) {
+      let props = feature.properties;
+      layer.bindPopup(
+        `<strong>Patch ID:</strong> ${props.patch_id}<br>
+         <strong>Tier:</strong> ${props.tier}<br>
+         <strong>Area:</strong> ${props.area} ha<br>
+         <strong>Core Area:</strong> ${props.core_area} ha<br>
+         <strong>Contiguity Index:</strong> ${props.contiguity_index}<br>
+         <strong>Perimeter-Area Ratio:</strong> ${props.perimeter_area_ratio}`
+      );
+    }
+
+    fetch("forest_patches.geojson")
+      .then(response => response.json())
+      .then(data => {
+        L.geoJSON(data, {
+          style: style,
+          onEachFeature: onEachFeature
+        }).addTo(map);
+      });
+
+    const legend = L.control({position: 'bottomright'});
+    legend.onAdd = function (map) {
+      const div = L.DomUtil.create('div', 'info legend');
+      const tiers = ['Core Fragment', 'Edge Fragment', 'Riparian Fragment', 'Linear Green Pockets', 'Recreational Forests and Parks', 'Degraded Fragments'];
+      const colors = ['#1a9850', '#91cf60', '#fee08b', '#fc8d59', '#d73027', '#a6d96a'];
+      for (let i = 0; i < tiers.length; i++) {
+        div.innerHTML += `<i style="background:${colors[i]}"></i> ${tiers[i]}<br>`;
+      }
+      return div;
+    };
+    legend.addTo(map);
+  </script>
+</body>
+</html>
