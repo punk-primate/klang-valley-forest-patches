@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const geocoder = new MapboxGeocoder({
                 accessToken: mapboxgl.accessToken, mapboxgl: mapboxgl, marker: { color: '#FF6347' },
-                placeholder: 'Search in Klang Valley',
+                placeholder: 'Search in the Klang Valley',
                 bbox: [101.0, 2.5, 102.0, 3.5], 
                 proximity: { longitude: INITIAL_CENTER[0], latitude: INITIAL_CENTER[1] },
                 countries: 'MY', types: 'country,region,postcode,district,place,locality,neighborhood,address,poi', limit: 7
@@ -398,8 +398,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const appContainer = document.getElementById('app-container');
     if (toggleSidebarBtn && sidebar && appContainer) {
         toggleSidebarBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed'); appContainer.classList.toggle('sidebar-collapsed');
-            map.resize();
+            sidebar.classList.toggle('collapsed');
+            appContainer.classList.toggle('sidebar-collapsed');
+            
+            // Wait for transition before resizing
+            setTimeout(() => {
+                map.resize();
+            }, 250);
+            
             toggleSidebarBtn.textContent = sidebar.classList.contains('collapsed') ? '›' : '‹';
             toggleSidebarBtn.setAttribute('aria-label', sidebar.classList.contains('collapsed') ? 'Open sidebar' : 'Close sidebar');
             toggleSidebarBtn.setAttribute('aria-expanded', String(!sidebar.classList.contains('collapsed')));
