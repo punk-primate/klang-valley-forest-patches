@@ -47,8 +47,8 @@ body {
     border-right: 1px solid var(--border-primary); z-index: 10; flex-shrink: 0;
 }
 #sidebar.collapsed {
-    width: 25px; 
-    padding: 5px 0; 
+    width: 30px; 
+    padding: 10px 0; 
     overflow: hidden; 
     box-shadow: none; 
     align-items: center;
