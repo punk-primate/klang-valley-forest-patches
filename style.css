@@ -22,8 +22,8 @@ body.dark-mode {
     --border-primary: #495057; --border-secondary: #343a40; --section-border-color: #343a40;
     --accent-primary: #0d6efd; --accent-primary-hover: #0a58ca;
     --accent-secondary: #5c636a; --accent-secondary-hover: #454b50;
-    --input-bg-color: #343a40; /* Re-added as it's used by geocoder and inputs directly */
-    --input-border-color: #495057; /* Re-added */
+    --input-bg-color: #343a40; 
+    --input-border-color: #495057; 
     --map-bg: #2b2b2b;
     --modal-bg-color: #2c3034; --modal-shadow-color: rgba(0,0,0,0.5);
     --hover-popup-bg: rgba(20, 20, 20, 0.95); --hover-popup-text: #f0f0f0;
@@ -47,7 +47,11 @@ body {
     border-right: 1px solid var(--border-primary); z-index: 10; flex-shrink: 0;
 }
 #sidebar.collapsed {
-    width: 48px; padding: 10px 0; overflow: hidden; box-shadow: none; align-items: center;
+    width: 25px; 
+    padding: 5px 0; 
+    overflow: hidden; 
+    box-shadow: none; 
+    align-items: center;
 }
 #sidebar.collapsed > .sidebar-section,
 #sidebar.collapsed > #sidebar-footer,
@@ -112,10 +116,6 @@ body {
 #tier-stats-breakdown h5 { margin-top: 0; margin-bottom: 6px; font-size: 0.9em; color: var(--heading-color); }
 #tier-stats-breakdown p { margin: 2px 0 2px 8px; color: var(--text-secondary); }
 
-/* Chart Container Styling - REMOVED AS PER YOUR DECISION */
-/* #tier-chart-container h5 { ... } */
-/* #tier-count-chart { ... } */
-
 #tools-section label { display: block; margin-bottom: 4px; font-size: 0.85em; font-weight: 500; color: var(--text-secondary); }
 #tools-section select,
 #area-filter-controls input[type="number"] {
@@ -145,10 +145,12 @@ body {
 #map-container { 
     flex-grow: 1; 
     position: relative; 
-    transition: margin-left 0.25s ease-in-out; /* Added transition */
+    transition: margin-left 0.25s ease-in-out;
     background-color: var(--map-bg); 
 }
-#app-container.sidebar-collapsed #map-container { margin-left: 48px; } /* Match collapsed sidebar width */
+#app-container.sidebar-collapsed #map-container { 
+    margin-left: 40px; /* MODIFIED - Was 48px, matches new sidebar.collapsed width */
+}
 #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; }
 
 #loading-indicator {
@@ -162,28 +164,27 @@ body {
 }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* ENHANCED MODAL STYLES */
 .modal {
     display: none; position: fixed; z-index: 1001;
     left: 0; top: 0; width: 100%; height: 100%;
-    overflow: auto; background-color: rgba(0,0,0,0.6); /* Dimmed background */
+    overflow: auto; background-color: rgba(0,0,0,0.6);
     opacity: 0; visibility: hidden;
-    transition: opacity 0.25s ease-in-out, visibility 0s linear 0.25s; /* Fade transition */
+    transition: opacity 0.25s ease-in-out, visibility 0s linear 0.25s;
 }
 body.modal-open .modal {
     opacity: 1; visibility: visible;
-    transition-delay: 0s; /* Apply immediately when class is added */
+    transition-delay: 0s;
 }
 .modal-content {
-    background-color: var(--bg-secondary); /* Use themed background */
+    background-color: var(--bg-secondary);
     color: var(--text-primary);
     margin: 10vh auto; padding: 25px 30px;
     border: 1px solid var(--border-primary);
-    width: 90%; max-width: 600px; /* Slightly smaller max-width */
+    width: 90%; max-width: 600px;
     border-radius: 6px;
-    box-shadow: 0 8px 25px var(--shadow-color); /* Softer, larger shadow */
+    box-shadow: 0 8px 25px var(--shadow-color);
     position: relative;
-    transform: translateY(-30px) scale(0.95); /* Initial state for animation */
+    transform: translateY(-30px) scale(0.95);
     opacity: 0;
     transition: transform 0.25s ease-out, opacity 0.25s ease-out;
 }
@@ -197,7 +198,6 @@ body.modal-open .modal-content {
     padding: 0 5px; transition: color 0.15s ease;
 }
 .close-modal-btn:hover, .close-modal-btn:focus { color: var(--text-primary); text-decoration: none; outline: none; }
-/* END ENHANCED MODAL STYLES */
 
 .custom-hover-popup .mapboxgl-popup-content {
     font-size: 0.85em; padding: 6px 10px; background-color: var(--popup-bg);
@@ -205,12 +205,12 @@ body.modal-open .modal-content {
 }
 .custom-hover-popup .mapboxgl-popup-close-button { display: none; }
 .filter-error-message {
-    color: var(--error-text-color); background-color: var(--error-bg);
+    color: var(--error-text); 
+    background-color: var(--error-bg);
     border: 1px solid var(--error-border); padding: 8px 12px; margin-top: 8px;
     border-radius: 4px; font-size: 0.85em;
 }
 
-/* Geocoder Theming */
 .mapboxgl-ctrl-geocoder {
     box-shadow: none; border: 1px solid var(--input-border-color);
     background-color: var(--input-bg-color); border-radius: 4px;
@@ -222,3 +222,60 @@ body.modal-open .modal-content {
 .mapboxgl-ctrl-geocoder .mapboxgl-ctrl-geocoder--suggestion--active { background-color: var(--bg-tertiary); }
 .mapboxgl-ctrl-geocoder svg { fill: var(--text-secondary); }
 #search-geocoder-container .mapboxgl-ctrl-geocoder { width: 100%; max-width: none; }
+
+/* Styles for Metric Info Icons and Popups */
+.metric-info-icon {
+    margin-left: 6px;
+    cursor: pointer;
+    font-size: 0.8em; 
+    color: var(--accent-primary);
+    display: inline-block;
+    user-select: none; 
+    vertical-align: middle; 
+}
+
+.metric-info-icon:hover,
+.metric-info-icon:focus {
+    color: var(--accent-primary-hover);
+    outline: none; 
+}
+
+#metric-info-popup {
+    position: fixed; 
+    background-color: var(--bg-tertiary); 
+    color: var(--text-primary);
+    border: 1px solid var(--border-primary);
+    padding: 12px 15px;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px var(--shadow-color);
+    z-index: 1050; 
+    max-width: 280px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    transition: opacity 0.15s ease-in-out; 
+}
+
+#metric-info-popup p {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+#metric-info-popup .close-metric-popup-btn {
+    display: block;
+    margin-left: auto; 
+    margin-top: 8px;
+    padding: 5px 10px;
+    background-color: var(--accent-secondary);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background-color 0.15s ease;
+}
+
+#metric-info-popup .close-metric-popup-btn:hover,
+#metric-info-popup .close-metric-popup-btn:focus {
+    background-color: var(--accent-secondary-hover);
+    outline: none; 
+}
