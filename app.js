@@ -1,5 +1,15 @@
 // --- VERY TOP OF app.js for file loading check ---
-console.log("--- app.js LATEST (Improved Modal, Stats on Idle) - Timestamp: " + new Date().toLocaleTimeString() + " ---");
+console.log("--- app.js LATEST (Improved Modal, Stats on Idle, Info Icons) - Timestamp: " + new Date().toLocaleTimeString() + " ---");
+
+// Define descriptions for metrics. These constants (PATCH_AREA_ATTRIBUTE, etc.) are from config.js
+const METRIC_DESCRIPTIONS = {
+    [PATCH_AREA_ATTRIBUTE]: "Patch Area: The total land area of the forest patch in hectares (ha). This indicates the overall size of the habitat.",
+    [CORE_AREA_ATTRIBUTE]: "Core Area: The area within a forest patch that is buffered from edge effects (e.g., changes in light, wind, temperature), in hectares (ha). It represents the more stable interior habitat critical for sensitive species.",
+    [CONTIGUITY_INDEX_ATTRIBUTE]: "Contiguity Index: A measure of the spatial connectedness or compactness of cells within a patch. Values range from 0 to 1, where higher values indicate more contiguous, less fragmented patches, which is generally better for biodiversity.",
+    [PERIMETER_AREA_RATIO_ATTRIBUTE]: "Perimeter-Area Ratio: The ratio of the patch's perimeter to its area. A higher ratio often indicates a more elongated or irregular shape, leading to a greater proportion of edge habitat compared to core habitat."
+};
+
+let metricPopup = null; // To keep track of the metric info popup
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DEBUG: DOMContentLoaded event fired. Initializing application.");
@@ -19,7 +29,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedPatchMapboxId = null;
     let currentMinArea = null;
     let currentMaxArea = null;
-    // let tierCountChartInstance = null; // Chart logic removed
 
     map.on('load', () => {
         console.log('Map "load" event fired.');
@@ -31,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
         map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
         initializeTierFilters();
-        // initializeLegend(); // Removed
         initializeHoverPopups();
         initializeClickInfoPanel();
         initializeGeocoder();
@@ -43,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     map.on('idle', () => {
         console.log('Map "idle" event fired.');
         loadingIndicator.style.display = 'none';
-        // Always update statistics when the map becomes idle
         console.log("DEBUG: Map is idle. Updating summary statistics for current view.");
         updateSummaryStatistics();
     });
@@ -60,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("DEBUG: initializeTierFilters() function EXECUTED (with color boxes).");
         const filterContainer = document.querySelector('#filter-section');
         if (!filterContainer) { console.error("Tier filter container (#filter-section) not found!"); return; }
-        filterContainer.innerHTML = '<h3>Filter by Category</h3>'; // Simplified title
+        filterContainer.innerHTML = '<h3>Filter by Category</h3>';
 
         ALL_TIERS.forEach(tierValueFromConfig => {
             const label = document.createElement('label');
@@ -143,7 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             geocoderContainer.innerHTML = '';
             geocoderContainer.appendChild(geocoder.onAdd(map));
-            // geocoder.on('result', (e) => console.log("DEBUG GEOCODER: Result:", e.result)); // Keep if needed
             geocoder.on('error', (e) => { console.error("DEBUG GEOCODER: Error:", e.error ? e.error.message : e); });
         } catch (error) { console.error("CRITICAL GEOCODER INIT ERROR:", error); }
     }
@@ -232,7 +238,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!map.isStyleLoaded() || !map.getLayer(FOREST_PATCH_LAYER_ID)) {
             console.warn("DEBUG: applyForestFilter - Style or layer not ready. Retrying or exiting.");
             if (!map.isStyleLoaded()) setTimeout(applyForestFilter, 300);
-            // else updateSummaryStatistics(); // Update stats to show '-' if layer isn't found after style load
             return;
         }
         const checkedTiers = Array.from(document.querySelectorAll('.tier-toggle:checked')).map(cb => cb.value);
@@ -254,10 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             map.setFilter(FOREST_PATCH_LAYER_ID, combinedFilterExpression);
             console.log(`DEBUG: Combined filter successfully applied to layer "${FOREST_PATCH_LAYER_ID}".`);
-            filterJustApplied = true;
         } catch (error) { 
             console.error(`DEBUG: Error applying combined filter:`, error); 
-            filterJustApplied = false;
         }
     }
 
@@ -307,19 +310,142 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayPatchInfo(properties) {
         console.log("DEBUG: displayPatchInfo() function EXECUTED.");
         const patchInfoContent = document.getElementById('patch-info-content');
-        if (!properties) { patchInfoContent.innerHTML = 'No data for this patch.'; return; }
-        let content = '<ul>';
+        patchInfoContent.innerHTML = ''; // Clear previous content
+
+        if (!properties) {
+            patchInfoContent.innerHTML = 'No data for this patch.';
+            return;
+        }
+
+        const ul = document.createElement('ul');
         INFO_PANEL_ATTRIBUTES.forEach(attrKey => {
             if (properties.hasOwnProperty(attrKey)) {
-                let value = properties[attrKey]; let displayKey = formatPropertyName(attrKey);
-                if (typeof value === 'number') {
-                    if (attrKey === PATCH_AREA_ATTRIBUTE || attrKey === CORE_AREA_ATTRIBUTE) value = value.toFixed(2) + ' ha';
-                    else if (attrKey === CONTIGUITY_INDEX_ATTRIBUTE || attrKey === PERIMETER_AREA_RATIO_ATTRIBUTE) value = value.toFixed(5);
-                    else if (attrKey === PATCH_ID_ATTRIBUTE && Number.isInteger(value)) value = value.toLocaleString();
-                } content += `<li><strong>${displayKey}:</strong> ${value}</li>`;
+                const li = document.createElement('li');
+                let displayKey = formatPropertyName(attrKey);
+                let valueToDisplay = properties[attrKey]; // Original value
+
+                // Format specific numeric values
+                if (typeof properties[attrKey] === 'number') {
+                    const numValue = properties[attrKey];
+                    if (attrKey === PATCH_AREA_ATTRIBUTE || attrKey === CORE_AREA_ATTRIBUTE) {
+                        valueToDisplay = numValue.toFixed(2) + ' ha';
+                    } else if (attrKey === CONTIGUITY_INDEX_ATTRIBUTE || attrKey === PERIMETER_AREA_RATIO_ATTRIBUTE) {
+                        valueToDisplay = numValue.toFixed(5);
+                    } else if (attrKey === PATCH_ID_ATTRIBUTE && Number.isInteger(numValue)) {
+                        valueToDisplay = numValue.toLocaleString();
+                    } else {
+                        valueToDisplay = numValue; // Default for other numbers
+                    }
+                }
+                
+                li.innerHTML = `<strong>${displayKey}:</strong> ${valueToDisplay} `; // Note the space for the icon
+
+                // Check if this metric has a description and add an info icon
+                if (METRIC_DESCRIPTIONS.hasOwnProperty(attrKey)) {
+                    const infoIcon = document.createElement('span');
+                    infoIcon.className = 'metric-info-icon';
+                    infoIcon.textContent = 'ℹ️';
+                    infoIcon.title = `Learn more about ${displayKey}`;
+                    infoIcon.setAttribute('role', 'button');
+                    infoIcon.setAttribute('tabindex', '0');
+                    infoIcon.setAttribute('data-metric-key', attrKey);
+
+                    infoIcon.addEventListener('click', (event) => {
+                        event.stopPropagation(); // Prevent click from bubbling up
+                        showMetricInfoPopup(attrKey, infoIcon);
+                    });
+                    infoIcon.addEventListener('keydown', (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            showMetricInfoPopup(attrKey, infoIcon);
+                        }
+                    });
+                    li.appendChild(infoIcon);
+                }
+                ul.appendChild(li);
             }
-        }); content += '</ul>'; patchInfoContent.innerHTML = content;
+        });
+        patchInfoContent.appendChild(ul);
     }
+
+    function showMetricInfoPopup(metricKey, iconElement) {
+        if (metricPopup) {
+            metricPopup.remove();
+            metricPopup = null;
+        }
+
+        const description = METRIC_DESCRIPTIONS[metricKey];
+        if (!description) return;
+
+        metricPopup = document.createElement('div');
+        metricPopup.id = 'metric-info-popup';
+        metricPopup.innerHTML = `
+            <p>${description}</p>
+            <button class="close-metric-popup-btn" aria-label="Close metric description">Close</button>
+        `;
+        document.body.appendChild(metricPopup);
+
+        const iconRect = iconElement.getBoundingClientRect();
+        metricPopup.style.position = 'fixed';
+        
+        // Initial position: below the icon
+        let top = iconRect.bottom + 5;
+        let left = iconRect.left;
+
+        metricPopup.style.top = `${top}px`;
+        metricPopup.style.left = `${left}px`;
+        
+        // Adjust if popup goes off screen
+        const popupRect = metricPopup.getBoundingClientRect();
+
+        if (popupRect.right > window.innerWidth - 10) {
+            left = window.innerWidth - popupRect.width - 10;
+        }
+        if (popupRect.bottom > window.innerHeight - 10) {
+            top = iconRect.top - popupRect.height - 5; // Place above icon
+        }
+        if (left < 10) {
+            left = 10;
+        }
+        if (top < 10 && (iconRect.top - popupRect.height - 5 < 10) ) { // If placing above also goes offscreen
+            top = 10; // Stick to top
+        }
+
+
+        metricPopup.style.top = `${top}px`;
+        metricPopup.style.left = `${left}px`;
+
+        const closeBtn = metricPopup.querySelector('.close-metric-popup-btn');
+        closeBtn.focus(); // Set focus to the close button for accessibility
+        closeBtn.addEventListener('click', () => {
+            metricPopup.remove();
+            metricPopup = null;
+            iconElement.focus(); // Return focus to the icon
+        });
+
+        // Close with Escape key
+        metricPopup.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closeBtn.click();
+            }
+        });
+    }
+
+    // Global click listener to close metric popup if clicked outside
+    document.addEventListener('click', function(event) {
+        if (metricPopup) {
+            const isClickInsidePopup = metricPopup.contains(event.target);
+            // Check if the click target or its parent is an info icon
+            const isClickOnAnIcon = event.target.classList.contains('metric-info-icon') || (event.target.parentElement && event.target.parentElement.classList.contains('metric-info-icon'));
+
+            if (!isClickInsidePopup && !isClickOnAnIcon) {
+                metricPopup.remove();
+                metricPopup = null;
+            }
+        }
+    });
+
 
     function formatPropertyName(name) {
         let formattedName = name;
@@ -336,7 +462,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("DEBUG: Attempting to call initializeDarkModeToggle...");
     initializeDarkModeToggle();
 
-    // Corrected initializeAboutModal to use classList for smoother transitions
     function initializeAboutModal() {
         console.log("DEBUG: initializeAboutModal() function EXECUTED.");
         const aboutBtn = document.getElementById('about-btn');
@@ -357,10 +482,10 @@ document.addEventListener('DOMContentLoaded', () => {
             aboutModal.addEventListener('transitionend', function handler() {
                 if (!document.body.classList.contains('modal-open')) aboutModal.style.display = 'none';
                 aboutModal.removeEventListener('transitionend', handler);
-            }, { once: true }); // Use {once: true} for self-removing listener
-             setTimeout(() => { // Fallback
+            }, { once: true }); 
+             setTimeout(() => { 
                 if (!document.body.classList.contains('modal-open')) aboutModal.style.display = 'none';
-            }, 300); // Match CSS transition duration
+            }, 300); 
         }
         aboutBtn.addEventListener('click', openModal);
         closeModalBtn.addEventListener('click', closeModal);
@@ -400,12 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleSidebarBtn.addEventListener('click', () => {
             sidebar.classList.toggle('collapsed');
             appContainer.classList.toggle('sidebar-collapsed');
-            
-            // Wait for transition before resizing
-            setTimeout(() => {
-                map.resize();
-            }, 250);
-            
+            setTimeout(() => { map.resize(); }, 250);
             toggleSidebarBtn.textContent = sidebar.classList.contains('collapsed') ? '›' : '‹';
             toggleSidebarBtn.setAttribute('aria-label', sidebar.classList.contains('collapsed') ? 'Open sidebar' : 'Close sidebar');
             toggleSidebarBtn.setAttribute('aria-expanded', String(!sidebar.classList.contains('collapsed')));
